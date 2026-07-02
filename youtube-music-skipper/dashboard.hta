@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta charset="UTF-8">
+    <title>YouTube Music Skipper</title>
+    <HTA:APPLICATION
+        ID="YTMSkipper"
+        APPLICATIONNAME="YouTube Music Skipper"
+        BORDER="dialog"
+        INNERBORDER="no"
+        CAPTION="yes"
+        ICON=""
+        MAXIMIZEBUTTON="no"
+        MINIMIZEBUTTON="yes"
+        SHOWINTASKBAR="yes"
+        SINGLEINSTANCE="yes"
+        SYSMENU="yes"
+        VERSION="1.0"
+        WINDOWSTATE="normal"
+        SCROLL="no" />
+    
+    <script language="javascript">
+        window.onload = function() {
+            window.resizeTo(450, 400);
+        };
+    </script>
+    
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 {
+            color: #ff0000;
+            margin-top: 0;
+            font-size: 20px;
+        }
+        .status {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .status span {
+            font-weight: bold;
+        }
+        .status.stopped span { color: #ff5555; }
+        .status.running span { color: #55ff55; }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 5px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button.stop {
+            background-color: #f44336;
+        }
+        button.edit {
+            background-color: #2196F3;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h2>YT Music Skipper</h2>
+    
+    <div id="statusBox" class="status stopped">
+        状態: <span id="statusText">停止中</span>
+    </div>
+
+    <button onclick="startSkipper()">▶ 起動 (バックグラウンドで開始)</button>
+    <button class="stop" onclick="stopSkipper()">■ 停止</button>
+    <button class="edit" onclick="editConfig()">⚙ 設定を開く (config.json)</button>
+    
+    <script language="javascript">
+        var shell = new ActiveXObject("WScript.Shell");
+
+        function updateStatus(isRunning) {
+            var box = document.getElementById("statusBox");
+            var text = document.getElementById("statusText");
+            if (isRunning) {
+                box.className = "status running";
+                text.innerText = "監視中 (バックグラウンド)";
+            } else {
+                box.className = "status stopped";
+                text.innerText = "停止中";
+            }
+        }
+
+        function startSkipper() {
+            try {
+                // アプリの起動（ポート指定）
+                shell.Run('cmd /c start "" "C:\\Users\\Mudai\\AppData\\Local\\youtube_music_desktop_app\\youtube-music-desktop-app.exe" --remote-debugging-port=9222', 0, false);
+                
+                // 監視スクリプトの起動 (黒画面を出さない設定: 0)
+                shell.Run('cmd /c title YTMSkipperProcess & node skipper.js', 0, false);
+                
+                updateStatus(true);
+            } catch (e) {
+                alert("起動に失敗しました: " + e.message);
+            }
+        }
+
+        function stopSkipper() {
+            try {
+                shell.Run('taskkill /F /FI "WINDOWTITLE eq YTMSkipperProcess*" /T', 0, true);
+                updateStatus(false);
+                alert("監視を停止しました。");
+            } catch (e) {
+                alert("停止に失敗しました: " + e.message);
+            }
+        }
+
+        function editConfig() {
+            try {
+                shell.Run("notepad config.json", 1, false);
+            } catch (e) {
+                alert("ファイルが開けません");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Music Skipper</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #ff5555;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        .card {
+            background-color: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            flex: 1;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-start { background-color: #4CAF50; }
+        .btn-stop { background-color: #f44336; }
+        
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #1e1e1e;
+            color: white;
+        }
+        input[type="text"] { flex: 2; }
+        input[type="number"] { flex: 1; }
+        .btn-add { background-color: #2196F3; flex: 0.5; }
+        .btn-now-playing { background-color: #9C27B0; flex: 0.5; font-size: 12px; }
+
+        .rule-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #444;
+        }
+        .rule-item button {
+            background-color: transparent;
+            color: #ff5555;
+            border: 1px solid #ff5555;
+            padding: 4px 8px;
+            flex: none;
+        }
+        .rule-item button:hover {
+            background-color: #ff5555;
+            color: white;
+        }
+
+        #logArea {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>YT Music Skipper</h2>
+
+    <div class="card">
+        <div class="controls">
+            <button class="btn-start" id="startBtn">▶ 監視開始</button>
+            <button class="btn-stop" id="stopBtn" disabled>■ 監視停止</button>
+        </div>
+        <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+            ※監視開始後、このウィンドウを「×」で閉じてもタスクトレイに格納され裏で動き続けます。
+        </p>
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="autostartCheckbox" style="cursor: pointer;">
+            <label for="autostartCheckbox" style="font-size: 12px; color: #ccc; cursor: pointer; user-select: none;">Windows 起動時に自動で起動する</label>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>スキップルールの設定</h3>
+        <div class="form-group" style="flex-direction: column;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="artistInput" placeholder="アーティスト名 (例: BUMP OF CHICKEN)" style="flex: 2;">
+                <select id="matchTypeInput" style="flex: 1; padding: 8px; border: 1px solid #555; border-radius: 4px; background-color: #1e1e1e; color: white;">
+                    <option value="exact">完全一致</option>
+                    <option value="includes">部分一致（含む）</option>
+                </select>
+                <input type="number" id="yearInput" placeholder="年 (例: 2022)" style="flex: 1;">
+                <select id="operatorInput" style="flex: 1; padding: 8px; border: 1px solid #555; border-radius: 4px; background-color: #1e1e1e; color: white;">
+                    <option value="newer_than">以後 (以上)</option>
+                    <option value="older_than">以前 (以下)</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="allowedSongsInput" placeholder="許可する曲名（カンマ区切りで複数指定可。空なら年で判定）" style="flex: 1;">
+                <button class="btn-add" id="addRuleBtn" style="flex: 0.3;">追加</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-now-playing" id="nowPlayingBtn" style="flex: 1;">🎵 再生中のアーティストを入力欄にセット</button>
+            </div>
+        </div>
+        <ul class="rule-list" id="ruleList">
+            <!-- ルールがここに入ります -->
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>GitHub Gist 同期設定</h3>
+        <div class="form-group" style="flex-direction: column;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="checkbox" id="gistEnabledCheckbox" style="cursor: pointer;">
+                <label for="gistEnabledCheckbox" style="font-size: 14px; cursor: pointer; user-select: none;">クラウド（Gist）と双方向に同期する</label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <input type="password" id="gistTokenInput" placeholder="GitHub Personal Access Token" style="flex: 1;">
+                <input type="text" id="gistIdInput" placeholder="Gist ID" style="flex: 1;">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-start" id="gistSyncBtn" style="flex: 1; background-color: #ff9800;">今すぐクラウドと同期する</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>動作ログ</h3>
+        <div id="logArea"></div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

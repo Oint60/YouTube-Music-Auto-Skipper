@@ -1,0 +1,19 @@
+# PC (Electron)
+youtube-music-skipper/node_modules/
+youtube-music-skipper/dist/
+youtube-music-skipper/config.json
+youtube-music-skipper/log.txt
+youtube-music-skipper/.env
+
+# Android (Kotlin)
+ytm-listener/.gradle/
+ytm-listener/build/
+ytm-listener/local.properties
+ytm-listener/**/*.iml
+ytm-listener/.idea/
+ytm-listener/app/build/
+*.apk
+
+# OS generated files
+.DS_Store
+Thumbs.db

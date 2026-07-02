@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script>
+
+var websocket = null;
+var pluginUUID = null;
+var BASE_URL = 'http://127.0.0.1:8080/api/streamdeck';
+var toggleContexts = new Set();
+var syncInterval = null;
+
+function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
+    pluginUUID = inPluginUUID;
+    websocket = new WebSocket('ws://127.0.0.1:' + inPort);
+
+    websocket.onopen = function() {
+        var json = {
+            event: inRegisterEvent,
+            uuid: inPluginUUID
+        };
+        websocket.send(JSON.stringify(json));
+        console.log('Connected to Stream Deck');
+    };
+
+    websocket.onmessage = function(evt) {
+        var jsonObj = JSON.parse(evt.data);
+        var event = jsonObj.event;
+        var context = jsonObj.context;
+        var action = jsonObj.action;
+        
+        console.log('Received event:', event, action);
+        
+        if (event === 'keyDown') {
+            handleKeyDown(context, action);
+        } else if (event === 'willAppear') {
+            handleWillAppear(context, action);
+        } else if (event === 'willDisappear') {
+            handleWillDisappear(context, action);
+        }
+    };
+
+    websocket.onerror = function(evt) {
+        console.log('WebSocket error:', evt);
+    };
+
+    websocket.onclose = function() {
+        console.log('WebSocket closed');
+        if (syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
+        }
+    };
+}
+
+async function handleKeyDown(context, action) {
+    if (action === 'com.mudai.ytmskipper.action.skip-artist') {
+        try {
+            const resp = await fetch(BASE_URL + '/skip-artist', { method: 'POST' });
+            if (resp.ok) {
+                showAlert(context, false); // 成功
+            } else {
+                showAlert(context, true);  // 失敗
+            }
+        } catch (e) {
+            showAlert(context, true);
+        }
+    } else if (action === 'com.mudai.ytmskipper.action.undo') {
+        try {
+            const resp = await fetch(BASE_URL + '/undo', { method: 'POST' });
+            if (resp.ok) {
+                showAlert(context, false);
+            } else {
+                showAlert(context, true);
+            }
+        } catch (e) {
+            showAlert(context, true);
+        }
+    } else if (action === 'com.mudai.ytmskipper.action.toggle') {
+        try {
+            const resp = await fetch(BASE_URL + '/toggle', { method: 'POST' });
+            if (resp.ok) {
+                const data = await resp.json();
+                setImage(context, data.isRunning ? 'imgs/action_normal.png' : 'imgs/action_critical.png');
+            } else {
+                showAlert(context, true);
+            }
+        } catch (e) {
+            showAlert(context, true);
+        }
+    }
+}
+
+async function handleWillAppear(context, action) {
+    if (action === 'com.mudai.ytmskipper.action.toggle') {
+        toggleContexts.add(context);
+        syncStatus(context);
+        
+        if (!syncInterval) {
+            syncInterval = setInterval(syncAllToggles, 3000);
+        }
+    }
+}
+
+function handleWillDisappear(context, action) {
+    if (action === 'com.mudai.ytmskipper.action.toggle') {
+        toggleContexts.delete(context);
+        if (toggleContexts.size === 0 && syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
+        }
+    }
+}
+
+async function syncStatus(context) {
+    try {
+        const resp = await fetch(BASE_URL + '/status');
+        if (resp.ok) {
+            const data = await resp.json();
+            setImage(context, data.isRunning ? 'imgs/action_normal.png' : 'imgs/action_critical.png');
+        }
+    } catch (e) {
+        console.error('Failed to sync status:', e);
+        setImage(context, 'imgs/action_critical.png');
+    }
+}
+
+function syncAllToggles() {
+    toggleContexts.forEach(context => {
+        syncStatus(context);
+    });
+}
+
+function setImage(context, imagePath) {
+    if (!websocket) return;
+    var json = {
+        event: 'setImage',
+        context: context,
+        payload: {
+            image: imagePath,
+            target: 0
+        }
+    };
+    websocket.send(JSON.stringify(json));
+}
+
+function showAlert(context, isError) {
+    if (!websocket) return;
+    var json = {
+        event: isError ? 'showAlert' : 'showOk',
+        context: context
+    };
+    websocket.send(JSON.stringify(json));
+}
+
+    </script>
+</head>
+<body>
+</body>
+</html>

@@ -1,0 +1,63 @@
+{
+  "Actions": [
+    {
+      "Icon": "imgs/action_normal",
+      "Name": "YTM Skip Artist",
+      "States": [
+        {
+          "Image": "imgs/action_normal",
+          "TitleAlignment": "middle",
+          "FontSize": "10"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Adds currently playing artist to YTM Skipper list (1900+) and skip.",
+      "UUID": "com.mudai.ytmskipper.action.skip-artist"
+    },
+    {
+      "Icon": "imgs/action_warning",
+      "Name": "YTM Undo Rule",
+      "States": [
+        {
+          "Image": "imgs/action_warning",
+          "TitleAlignment": "middle",
+          "FontSize": "10"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Undo the last added skip rule via Stream Deck.",
+      "UUID": "com.mudai.ytmskipper.action.undo"
+    },
+    {
+      "Icon": "imgs/action_critical",
+      "Name": "YTM Toggle Skipper",
+      "States": [
+        {
+          "Image": "imgs/action_critical",
+          "TitleAlignment": "middle",
+          "FontSize": "10"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Toggle YTM Skipper monitoring on/off.",
+      "UUID": "com.mudai.ytmskipper.action.toggle"
+    }
+  ],
+  "SDKVersion": 2,
+  "Author": "Mudai",
+  "CodePath": "code.html",
+  "Description": "Control YouTube Music Skipper from Stream Deck",
+  "Name": "YTM Skipper",
+  "Icon": "imgs/plugin",
+  "URL": "https://github.com/mudai/ytm-skipper",
+  "Version": "1.0.0",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.0"
+  }
+}

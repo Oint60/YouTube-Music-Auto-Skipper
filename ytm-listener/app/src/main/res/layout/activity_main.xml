@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="YTM Listener"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 設定インポート & 権限ボタン (コンパクトに横並び) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btn_import"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="JSONインポート"
+            android:textSize="12sp"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btn_permission"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="通知権限許可"
+            android:textSize="12sp"
+            android:layout_marginStart="4dp"
+            android:backgroundTint="#FF9800"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_permission_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="通知権限: 確認中"
+        android:textSize="12sp"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tv_excludes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="除外設定: 0件"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Gist同期設定 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#E0E0E0"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp">
+        
+        <CheckBox
+            android:id="@+id/cb_gist_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="クラウド(Gist)と同期する"
+            android:textSize="12sp"/>
+            
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/et_gist_token"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="GitHub Token"
+                android:inputType="textPassword"
+                android:textSize="12sp"/>
+            <EditText
+                android:id="@+id/et_gist_id"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Gist ID"
+                android:inputType="text"
+                android:textSize="12sp"/>
+        </LinearLayout>
+        
+        <Button
+            android:id="@+id/btn_gist_sync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="今すぐ同期 (Pull)"
+            android:textSize="12sp"
+            android:backgroundTint="#FF9800"/>
+    </LinearLayout>
+
+    <!-- 再生中楽曲セクション -->
+    <TextView
+        android:id="@+id/tv_now_playing_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="再生中の楽曲"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_gravity="start"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/tv_now_playing"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="再生中の曲はありません"
+        android:textSize="15sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- ルール追加アクションボタン群 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/btn_add_exclude_rule"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="再生中を除外ルールに追加"
+            android:textSize="12sp"
+            android:layout_marginEnd="4dp"
+            android:backgroundTint="#E91E63"/>
+
+        <Button
+            android:id="@+id/btn_manual_add_exclude"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="手動でルール追加"
+            android:textSize="12sp"
+            android:layout_marginStart="4dp"
+            android:backgroundTint="#9C27B0"/>
+    </LinearLayout>
+
+    <!-- 登録済みルール一覧 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="登録済みルール一覧"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_gravity="start"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/et_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="ルールを検索（アーティスト名など）"
+        android:textSize="13sp"
+        android:layout_marginBottom="8dp"
+        android:inputType="text"
+        android:textColor="@android:color/black"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#F5F5F5"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/layout_rules_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+</LinearLayout>

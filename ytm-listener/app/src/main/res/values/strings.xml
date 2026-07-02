@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">YTM Listener</string>
+    <string name="service_name">YouTube Music Listener Service</string>
+    <string name="notification_channel_name">YTM Listener Service Channel</string>
+    <string name="notification_title">YTM Listener 動作中</string>
+    <string name="notification_text">YouTube Music の再生情報を監視しています</string>
+</resources>
