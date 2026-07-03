@@ -98,6 +98,20 @@ async function fetchReleaseYear(videoId) {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
     });
     const html = response.data;
+    
+    // 1. Description（説明文）からリリース年を探す
+    const descMatch = html.match(/\"shortDescription\"\:\"(.*?)\"/);
+    if (descMatch) {
+      const desc = descMatch[1].replace(/\\n/g, ' ').replace(/\\/g, '');
+      const deepMatch = desc.match(/(?:Released on|℗|©|\(P\)|\(C\))(?:\\n|\s|:)*(\d{4})/i);
+      if (deepMatch) return parseInt(deepMatch[1], 10);
+    }
+    
+    // 2. ページ全体のテキストから直接探す
+    const pageDeepMatch = html.match(/(?:Released on|℗|©|\(P\)|\(C\))(?:\\n|\s|:)*(\d{4})/i);
+    if (pageDeepMatch) return parseInt(pageDeepMatch[1], 10);
+    
+    // 3. 最後の手段として publishDate / uploadDate
     const match = html.match(/\"publishDate\"\:\"(\d{4})/) || html.match(/uploadDate\"\:\"(\d{4})/);
     return match ? parseInt(match[1], 10) : null;
   } catch (e) {
@@ -117,7 +131,13 @@ function shouldSkip(artist, releaseYear, title) {
     if (rule.artist && artist && artist.includes(rule.artist)) {
       const ruleAllowed = rule.allowedSongs || [];
       if (ruleAllowed.some(songTitle => title.includes(songTitle))) return false;
-      if (rule.year !== undefined && releaseYear !== null) {
+      
+      // 全曲スキップルール（year: 0, newer_than）の場合はリリース年に関わらずスキップ
+      if (rule.year === 0 && (rule.yearOperator === 'newer_than' || !rule.yearOperator)) {
+        return true;
+      }
+      
+      if (rule.year !== undefined && releaseYear !== null && releaseYear !== undefined) {
         const operator = rule.yearOperator || 'newer_than';
         if (operator === 'older_than') {
           if (releaseYear <= rule.year) return true;
@@ -164,46 +184,22 @@ async function start(initialConfig, onLog) {
 
     while (isRunning) {
       try {
-        // 1. メタデータの完全同期待ち (API ID と DOM リンク ID が一致するまで待機)
-        let stableTrack = null;
-        for (let i = 0; i < 8; i++) {
-          const current = await activePage.evaluate(() => {
-            const pb = document.querySelector('ytmusic-player-bar');
-            const api = pb?.playerApi_ || document.getElementById('movie_player');
-            const data = api?.getVideoData?.() || {};
-            const videoId = data.video_id;
-            if (!videoId || !data.title || data.title.includes('YouTube Music')) return null;
+        // メタデータの取得
+        const current = await activePage.evaluate(() => {
+          const pb = document.querySelector('ytmusic-player-bar');
+          const api = pb?.playerApi_ || document.getElementById('movie_player');
+          const data = api?.getVideoData?.() || {};
+          const videoId = data.video_id;
+          if (!videoId || !data.title || data.title.includes('YouTube Music')) return null;
+          return { title: data.title, artist: data.author, videoId };
+        });
 
-            // リンクIDとの一致確認 (起動直後や曲間の同期ズレを排除)
-            const link = pb?.querySelector('a[href*="watch?v="]');
-            const linkId = link?.getAttribute('href')?.match(/v=([^&]+)/)?.[1];
-            if (linkId && linkId !== videoId) return null;
-
-            let bestYear = null;
-            const text = pb?.innerText || '';
-            const deepMatch = text.match(/(?:Released on|℗|©|\(P\)|\(C\))\s*:?\s*(\d{4})/i);
-            if (deepMatch) bestYear = parseInt(deepMatch[1], 10);
-            else {
-              const years = text.match(/\b(19|20)\d{2}\b/g);
-              if (years) bestYear = Math.min(...years.map(y => parseInt(y, 10)));
-            }
-            return { title: data.title, artist: data.author, videoId, domYear: bestYear };
-          });
-
-          if (current && stableTrack && current.videoId === stableTrack.videoId) {
-            stableTrack = current;
-            break;
-          }
-          stableTrack = current;
-          await sleep(250);
-        }
-
-        if (!stableTrack || stableTrack.title.includes('ベストセラー曲')) {
-          await sleep(800);
+        if (!current || current.title.includes('ベストセラー曲')) {
+          await sleep(500);
           continue;
         }
 
-        const { title, artist, videoId, domYear } = stableTrack;
+        const { title, artist, videoId } = current;
         nowPlaying = { artist: artist || '', title: title || '' };
         if (videoId === lastVideoId) {
           await sleep(POLL_INTERVAL_MS);
@@ -211,16 +207,49 @@ async function start(initialConfig, onLog) {
         }
 
         if (isProcessing && videoId !== lastVideoId) isProcessing = false;
-        lastVideoId = videoId;
+        
+        // 1. まず名前だけで「全曲スキップ」に該当するかチェック（0秒で判定）
+        let skipDecision = shouldSkip(artist, null, title);
+        let year = null;
+        let source = '画面';
 
-        if (skippedIds.has(videoId)) {
-          await sleep(POLL_INTERVAL_MS);
-          continue;
+        // 2. スキップ対象でない場合は、DOMの年情報が同期されるまで最大3秒待つ
+        if (!skipDecision) {
+          for (let i = 0; i < 6; i++) {
+            const domInfo = await activePage.evaluate((vid) => {
+              const moviePlayer = document.getElementById('movie_player');
+              const currentVid = moviePlayer?.getVideoData?.()?.video_id;
+              
+              if (currentVid === vid) {
+                let bestYear = null;
+                
+                // PlayerResponseのDescriptionから正確なリリース年を抽出
+                const response = moviePlayer?.getPlayerResponse?.();
+                if (response) {
+                  const desc = response.microformat?.microformatDataRenderer?.description || 
+                               response.videoDetails?.shortDescription || '';
+                  const deepMatch = desc.match(/(?:Released on|℗|©|\(P\)|\(C\))(?:\\n|\s|:)*(\d{4})/i);
+                  if (deepMatch) {
+                    bestYear = parseInt(deepMatch[1], 10);
+                  }
+                }
+                
+                if (bestYear) return bestYear;
+                return -1; // 同期したが年が見つからない
+              }
+              return null; // まだ同期していない
+            }, videoId);
+
+            if (domInfo !== null) {
+              if (domInfo !== -1) year = domInfo;
+              break;
+            }
+            await sleep(500); // 同期するまで待つ
+          }
         }
 
-        let year = domYear;
-        let source = '画面';
-        if (!year) {
+        // 3. 3秒待っても画面から年が取得できなかった場合、キャッシュまたは検索にフォールバック
+        if (!skipDecision && !year) {
           year = getCachedYear(videoId);
           source = 'キャッシュ';
           if (year === undefined) {
@@ -228,9 +257,13 @@ async function start(initialConfig, onLog) {
             source = '検索';
             if (year) setCachedYear(videoId, year);
           }
+          // 年が取得できたので再度判定
+          if (year) skipDecision = shouldSkip(artist, year, title);
         }
 
-        if (shouldSkip(artist, year, title)) {
+        lastVideoId = videoId;
+
+        if (skipDecision) {
           isProcessing = true;
           onLog(`[判定: スキップ] ${artist} - ${title} (${year || '不明'}:${source})`);
           skippedIds.add(videoId);

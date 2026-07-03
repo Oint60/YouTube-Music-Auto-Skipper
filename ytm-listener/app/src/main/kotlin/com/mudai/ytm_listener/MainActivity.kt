@@ -187,6 +187,9 @@ class MainActivity : AppCompatActivity() {
             gistId = etGistId.text.toString().trim()
         )
         prefs.edit().putString("config_json", gson.toJson(configObj)).apply()
+        
+        // Serviceに変更を通知して再読み込みさせる
+        notifySettingsChanged()
     }
 
     override fun onResume() {
@@ -199,18 +202,35 @@ class MainActivity : AppCompatActivity() {
         val artist = prefs.getString("now_playing_artist", "") ?: ""
         updateNowPlayingUI(title, artist)
 
-        // ブロードキャストの登録
+        // ブロードキャストの登録 (再生中トラック)
         val filter = IntentFilter("com.mudai.ytm_listener.TRACK_CHANGED")
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(trackReceiver, filter, Context.RECEIVER_EXPORTED)
         } else {
             registerReceiver(trackReceiver, filter)
         }
+
+        // ブロードキャストの登録 (ルール追加時のUI更新)
+        val rulesFilter = IntentFilter("com.mudai.ytm_listener.RULES_UPDATED")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(rulesReceiver, rulesFilter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(rulesReceiver, rulesFilter)
+        }
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(trackReceiver)
+        unregisterReceiver(rulesReceiver)
+    }
+
+    private val rulesReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.mudai.ytm_listener.RULES_UPDATED") {
+                updateUI(etSearch.text.toString())
+            }
+        }
     }
 
     private fun updateNowPlayingUI(title: String, artist: String) {

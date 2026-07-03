@@ -10,7 +10,8 @@ const GIST_FILENAME = 'youtube-music-skipper-config.json';
  */
 async function pullFromGist(token, gistId) {
   try {
-    const response = await axios.get(`https://api.github.com/gists/${gistId}`, {
+    const url = `https://api.github.com/gists/${gistId}?t=${Date.now()}`;
+    const response = await axios.get(url, {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',

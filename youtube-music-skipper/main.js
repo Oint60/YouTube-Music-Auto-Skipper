@@ -79,8 +79,18 @@ app.whenReady().then(async () => {
       if (pulled) {
         currentConfig.rules = pulled.rules || [];
         currentConfig.allowedSongs = pulled.allowedSongs || [];
+        let migrated = false;
+        currentConfig.rules.forEach(r => {
+          if (r.year === 1900 && r.yearOperator === 'older_than') {
+            r.year = 0; r.yearOperator = 'newer_than'; migrated = true;
+          }
+        });
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(currentConfig, null, 2));
-        console.log('Config updated from Gist successfully.');
+        console.log('Config updated from Gist successfully.' + (migrated ? ' (Migrated rules)' : ''));
+        // Gist側も書き換えるためにPush
+        if (migrated) {
+          gistSync.pushToGist(currentConfig.gistSync.token, currentConfig.gistSync.gistId, currentConfig).catch(e=>console.error(e));
+        }
       }
     }
   }
@@ -95,7 +105,15 @@ app.whenReady().then(async () => {
 // IPC 通信のハンドリング
 ipcMain.handle('get-config', () => {
   if (fs.existsSync(CONFIG_PATH)) {
-    return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    let migrated = false;
+    config.rules.forEach(r => {
+      if (r.year === 1900 && r.yearOperator === 'older_than') {
+        r.year = 0; r.yearOperator = 'newer_than'; migrated = true;
+      }
+    });
+    if (migrated) fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    return config;
   }
   return { rules: [] };
 });
@@ -120,7 +138,16 @@ ipcMain.handle('manual-gist-sync', async () => {
   if (pulled) {
     currentConfig.rules = pulled.rules || [];
     currentConfig.allowedSongs = pulled.allowedSongs || [];
+    let migrated = false;
+    currentConfig.rules.forEach(r => {
+      if (r.year === 1900 && r.yearOperator === 'older_than') {
+        r.year = 0; r.yearOperator = 'newer_than'; migrated = true;
+      }
+    });
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(currentConfig, null, 2));
+    if (migrated) {
+      gistSync.pushToGist(currentConfig.gistSync.token, currentConfig.gistSync.gistId, currentConfig).catch(e=>console.error(e));
+    }
     skipper.setConfig(currentConfig);
     if (mainWindow) mainWindow.webContents.send('config-updated', currentConfig);
     return { success: true };
@@ -128,6 +155,33 @@ ipcMain.handle('manual-gist-sync', async () => {
     return { success: false, error: 'Gistからの取得に失敗しました。TokenやIDを確認してください。' };
   }
 });
+
+// 自動同期（ポーリング）の設定：1分ごとに実行
+setInterval(async () => {
+  if (fs.existsSync(CONFIG_PATH)) {
+    const currentConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    if (currentConfig.gistSync && currentConfig.gistSync.enabled && currentConfig.gistSync.token && currentConfig.gistSync.gistId) {
+      try {
+        const pulled = await gistSync.pullFromGist(currentConfig.gistSync.token, currentConfig.gistSync.gistId);
+        if (pulled) {
+          // 変更があるか確認（簡易的な文字列表比較）
+          const oldStr = JSON.stringify(currentConfig.rules) + JSON.stringify(currentConfig.allowedSongs);
+          const newStr = JSON.stringify(pulled.rules) + JSON.stringify(pulled.allowedSongs);
+          if (oldStr !== newStr) {
+            currentConfig.rules = pulled.rules || [];
+            currentConfig.allowedSongs = pulled.allowedSongs || [];
+            fs.writeFileSync(CONFIG_PATH, JSON.stringify(currentConfig, null, 2));
+            skipper.setConfig(currentConfig);
+            if (mainWindow) mainWindow.webContents.send('config-updated', currentConfig);
+            if (mainWindow) mainWindow.webContents.send('skipper-log', '[同期] Gistから新しいルールを自動取得しました');
+          }
+        }
+      } catch (e) {
+        console.error('Auto sync error:', e);
+      }
+    }
+  }
+}, 60000); // 60秒
 
 ipcMain.handle('get-now-playing', () => {
   return skipper.getNowPlaying();
@@ -285,13 +339,13 @@ function startApiServer() {
           const artist = np.artist;
           const config = fs.existsSync(CONFIG_PATH) ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')) : { rules: [] };
           
-          const exists = config.rules.some(r => r.artist === artist && r.matchType === 'includes' && r.year === 1900 && r.yearOperator === 'older_than');
+          const exists = config.rules.some(r => r.artist === artist && r.matchType === 'includes' && r.year === 0 && r.yearOperator === 'newer_than');
           if (!exists) {
             config.rules.push({
               artist: artist,
               matchType: 'includes',
-              year: 1900,
-              yearOperator: 'older_than',
+              year: 0,
+              yearOperator: 'newer_than',
               allowedSongs: []
             });
             fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
@@ -301,7 +355,7 @@ function startApiServer() {
             }
             lastAddedArtistViaStreamDeck = artist;
             if (mainWindow) {
-              mainWindow.webContents.send('skipper-log', `[Stream Deck] 「${artist}」をスキップリストに追加しました (1900年以前)`);
+              mainWindow.webContents.send('skipper-log', `[Stream Deck] 「${artist}」をスキップリストに追加しました (全曲)`);
               mainWindow.webContents.send('config-updated', config);
             }
           } else {
@@ -334,7 +388,7 @@ function startApiServer() {
           const config = fs.existsSync(CONFIG_PATH) ? JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')) : { rules: [] };
           
           const initialLength = config.rules.length;
-          config.rules = config.rules.filter(r => !(r.artist === artist && r.matchType === 'includes' && r.year === 1900 && r.yearOperator === 'older_than'));
+          config.rules = config.rules.filter(r => !(r.artist === artist && r.matchType === 'includes' && r.year === 0 && r.yearOperator === 'newer_than'));
           
           if (config.rules.length < initialLength) {
             fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
@@ -387,7 +441,7 @@ function stopApiServer() {
       console.log('API Server stopped');
     });
     apiServer = null;
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('skipper-log', '[APIサーバー] 停止しました');
     }
   }

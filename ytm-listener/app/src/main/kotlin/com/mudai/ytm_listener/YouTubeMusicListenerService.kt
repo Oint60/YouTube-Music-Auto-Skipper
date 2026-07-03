@@ -325,17 +325,17 @@ class YouTubeMusicListenerService : NotificationListenerService() {
 
             Log.d("YTM_Listener", "Manual skip and dislike requested for: $targetArtist - $targetTrack")
 
-            // 1. ルールの追加 (1900年以前をスキップ)
+            // 1. ルールの追加 (全年代をスキップ)
             var config = appConfig ?: AppConfig(emptyList(), emptyList())
             val rulesList = config.rules?.toMutableList() ?: mutableListOf()
             
             // 既に同じルールがないか確認
-            val exists = rulesList.any { it.artist == targetArtist && it.matchType == "includes" && it.year == 1900 && it.yearOperator == "older_than" }
+            val exists = rulesList.any { it.artist == targetArtist && it.matchType == "includes" && it.year == 0 && it.yearOperator == "newer_than" }
             if (!exists) {
                 rulesList.add(SkipRule(
                     artist = targetArtist,
-                    year = 1900,
-                    yearOperator = "older_than",
+                    year = 0,
+                    yearOperator = "newer_than",
                     matchType = "includes",
                     allowedSongs = emptyList()
                 ))
@@ -346,12 +346,22 @@ class YouTubeMusicListenerService : NotificationListenerService() {
                 val prefs = getSharedPreferences("ytm_listener_prefs", Context.MODE_PRIVATE)
                 prefs.edit().putString("config_json", Gson().toJson(config)).apply()
                 
+                // UI側に設定変更を通知する
+                sendBroadcast(Intent("com.mudai.ytm_listener.RULES_UPDATED"))
+                
                 // 2.5. Gist同期が有効ならPushする
                 val gistToken = config.gistSync?.token
                 val gistId = config.gistSync?.gistId
                 if (config.gistSync?.enabled == true && !gistToken.isNullOrEmpty() && !gistId.isNullOrEmpty()) {
                     scope.launch {
-                        GistSyncManager.pushConfig(this@YouTubeMusicListenerService, gistToken, gistId)
+                        val result = GistSyncManager.pushConfig(this@YouTubeMusicListenerService, gistToken, gistId)
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            android.widget.Toast.makeText(this@YouTubeMusicListenerService, "Gist Push: $result", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.widget.Toast.makeText(this@YouTubeMusicListenerService, "Gist同期は無効または未設定です", android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
                 
