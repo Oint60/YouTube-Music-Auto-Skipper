@@ -1,18 +1,31 @@
-# PC (Electron)
-youtube-music-skipper/node_modules/
-youtube-music-skipper/dist/
-youtube-music-skipper/config.json
-youtube-music-skipper/log.txt
-youtube-music-skipper/.env
+# Stream Deck Plugin
+streamdeck-plugin/node_modules/
+streamdeck-plugin/package-lock.json
 
-# Android (Kotlin)
-ytm-listener/.gradle/
-ytm-listener/build/
-ytm-listener/local.properties
-ytm-listener/**/*.iml
-ytm-listener/.idea/
-ytm-listener/app/build/
+# Local Build Artifacts
+dist/
+*.streamDeckPlugin
+*.zip
 *.apk
+*.aab
+
+# Internal Extensions & Apps (Keep local, do not push to public GitHub)
+chrome-extension/
+chrome-extension-gdrive/
+ytm-listener-gdrive/
+youtube-music-skipper/
+
+# Logs & Temp files
+*.log
+bridge_debug.log
+
+# Utility Scripts & Temporary Assets
+*.ps1
+package_zips.js
+download_server.js
+APK*.bat
+preview_ui_mockup.html
+streamdeck_ext_mockup_*.jpg
 
 # OS generated files
 .DS_Store

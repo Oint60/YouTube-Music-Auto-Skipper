@@ -1,0 +1,157 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"UUID": "com.nostune.streamdeck",
+	"Name": "NosTune (YouTube Music)",
+	"Description": "Control YouTube Music NosTune directly from Stream Deck with live artwork display",
+	"Author": "NosTune",
+	"Version": "2.0.0.0",
+	"SDKVersion": 2,
+	"CodePath": "bin/plugin.js",
+	"Nodejs": {
+		"Version": "20"
+	},
+	"Category": "NosTune (YouTube Music)",
+	"CategoryIcon": "imgs/plugin",
+	"Icon": "imgs/plugin",
+	"URL": "https://github.com/Oint60/YouTube-Music-Auto-Skipper",
+	"OS": [
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Software": {
+		"MinimumVersion": "6.6"
+	},
+	"Actions": [
+		{
+			"Icon": "imgs/action_now_playing",
+			"Name": "YTM Now Playing (再生/一時停止)",
+			"States": [
+				{
+					"Image": "imgs/action_now_playing",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": false,
+			"Tooltip": "アートワークと楽曲情報を全面表示。キーを押すと再生/一時停止をトグルします。",
+			"UUID": "com.nostune.streamdeck.action.now-playing",
+			"PropertyInspectorPath": "property_inspector.html"
+		},
+		{
+			"Icon": "imgs/action_next",
+			"Name": "YTM Next Track",
+			"States": [
+				{
+					"Image": "imgs/action_next",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Skip to the next track on YouTube Music.",
+			"UUID": "com.nostune.streamdeck.action.next",
+			"PropertyInspectorPath": "property_inspector.html"
+		},
+		{
+			"Icon": "imgs/action_previous",
+			"Name": "YTM Previous Track",
+			"States": [
+				{
+					"Image": "imgs/action_previous",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Return to the previous track on YouTube Music.",
+			"UUID": "com.nostune.streamdeck.action.previous",
+			"PropertyInspectorPath": "property_inspector.html"
+		},
+		{
+			"Icon": "imgs/action_skip_artist",
+			"Name": "YTM Skip Artist",
+			"States": [
+				{
+					"Image": "imgs/action_skip_artist",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Adds currently playing artist to YTM Skipper list and skip.",
+			"UUID": "com.nostune.streamdeck.action.skip-artist"
+		},
+		{
+			"Icon": "imgs/action_undo",
+			"Name": "YTM Undo Rule",
+			"States": [
+				{
+					"Image": "imgs/action_undo",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Undo the last added skip rule.",
+			"UUID": "com.nostune.streamdeck.action.undo"
+		},
+		{
+			"Icon": "imgs/action_allow_once",
+			"Name": "YTM Allow Once (今回だけ聴く)",
+			"States": [
+				{
+					"Image": "imgs/action_allow_once",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Temporarily allow skipped track and rewind (今回だけ聴く).",
+			"UUID": "com.nostune.streamdeck.action.allow-once"
+		},
+		{
+			"Icon": "imgs/action_allow_permanent",
+			"Name": "YTM Allow Song Permanent (永久許可)",
+			"States": [
+				{
+					"Image": "imgs/action_allow_permanent",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Permanently whitelist the current or last skipped song.",
+			"UUID": "com.nostune.streamdeck.action.allow-permanent"
+		},
+		{
+			"Icon": "imgs/action_sync_drive",
+			"Name": "YTM Google Drive Sync (今すぐ同期)",
+			"States": [
+				{
+					"Image": "imgs/action_sync_drive",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Sync skip rules with Google Drive immediately.",
+			"UUID": "com.nostune.streamdeck.action.sync-drive"
+		},
+		{
+			"Icon": "imgs/action_toggle",
+			"Name": "YTM Toggle Skipper",
+			"States": [
+				{
+					"Image": "imgs/action_toggle",
+					"TitleAlignment": "middle",
+					"FontSize": 10
+				}
+			],
+			"SupportedInMultiActions": true,
+			"Tooltip": "Toggle YTM Skipper monitoring on/off.",
+			"UUID": "com.nostune.streamdeck.action.toggle"
+		}
+	]
+}

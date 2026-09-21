@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>NosTune Settings</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #d8d8d8;
+            user-select: none;
+        }
+
+        body {
+            background-color: #2d2d2d;
+            padding: 12px 14px;
+        }
+
+        .sdpi-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            border-bottom: 1px solid #3d3d3d;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .target-tag {
+            font-size: 11px;
+            font-weight: normal;
+            color: #94a3b8;
+            margin-left: auto;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0 2px 0;
+            cursor: pointer;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            font-weight: 500;
+            color: #eeeeee;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .setting-group.disabled {
+            opacity: 0.38;
+            pointer-events: none;
+            filter: grayscale(0.8);
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: opacity 0.2s ease;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: #eeeeee;
+        }
+
+        .value-badge {
+            font-weight: 600;
+            color: #38bdf8;
+            background: #1e293b;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 5px;
+            background: #4a4a4a;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            transition: background 0.15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #60a5fa;
+        }
+
+        .desc {
+            font-size: 11px;
+            color: #8e8e93;
+            line-height: 1.35;
+        }
+
+        .btn-row {
+            margin-top: 6px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            background: #3b4252;
+            border: 1px solid #4c566a;
+            color: #eceff4;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: #434c5e;
+            border-color: #5e81ac;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Integration Status Banner */
+        .integration-banner {
+            background: #20242b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 2px;
+        }
+
+        .banner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .banner-status-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+        }
+
+        .status-dot.waiting {
+            background: #f59e0b;
+        }
+
+        .banner-status-text {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .banner-ext-link {
+            font-size: 10.5px;
+            color: #38bdf8;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .banner-ext-link:hover {
+            text-decoration: underline;
+            color: #7dd3fc;
+        }
+
+        .banner-detail {
+            font-size: 10.5px;
+            color: #94a3b8;
+            line-height: 1.35;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <!-- YouTube Music / Chrome 拡張機能 連携ステータスバナー -->
+        <div class="integration-banner" id="integrationBanner">
+            <div class="banner-header">
+                <div class="banner-status-group">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span class="banner-status-text" id="statusText">接続確認中...</span>
+                </div>
+                <a href="https://chromewebstore.google.com/detail/nostune-for-youtube-music/pjhfegcldkplchmfgfocenafjohflnjg" target="_blank" class="banner-ext-link" id="extStoreLink">Chrome拡張機能 ↗</a>
+            </div>
+            <div class="banner-detail" id="bannerDetail">YouTube Music との通信状態をチェックしています</div>
+        </div>
+
+        <div class="section-title">
+            <span id="titleIcon">🎵</span>
+            <span id="titleText">スクロール表示設定</span>
+            <span id="targetTag" class="target-tag">個別設定</span>
+        </div>
+
+        <!-- スクロール無効化チェックボックス -->
+        <div class="checkbox-row" id="disableScrollContainer">
+            <input type="checkbox" id="disableScrollCheckbox">
+            <label for="disableScrollCheckbox" class="checkbox-label">スクロールしない（先頭固定表示）</label>
+        </div>
+
+        <!-- 静止時間 -->
+        <div class="setting-group" id="pauseGroup">
+            <div class="label-row">
+                <span class="setting-label">静止時間（ポーズ）</span>
+                <span id="pauseVal" class="value-badge">5.0 秒</span>
+            </div>
+            <div class="slider-row">
+                <input type="range" id="pauseSlider" min="0" max="15" step="0.5" value="5">
+            </div>
+            <div class="desc">曲開始時およびスクロールが1周した際の静止時間（0秒で常時スクロール）</div>
+        </div>
+
+        <!-- スクロール速度 -->
+        <div class="setting-group" id="speedGroup">
+            <div class="label-row">
+                <span class="setting-label">スクロール速度</span>
+                <span id="speedVal" class="value-badge">80 px/秒</span>
+            </div>
+            <div class="slider-row">
+                <input type="range" id="speedSlider" min="20" max="250" step="5" value="80">
+            </div>
+            <div class="desc">テキストが移動する速度（おすすめ: 60〜100 px/秒）</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn" id="resetBtn">標準値に戻す</button>
+        </div>
+    </div>
+
+    <script>
+        var websocket = null;
+        var pluginUUID = null;
+        var currentAction = null;
+
+        var titleIcon = document.getElementById('titleIcon');
+        var titleText = document.getElementById('titleText');
+        var targetTag = document.getElementById('targetTag');
+        var disableScrollCheckbox = document.getElementById('disableScrollCheckbox');
+        var pauseGroup = document.getElementById('pauseGroup');
+        var speedGroup = document.getElementById('speedGroup');
+        var pauseSlider = document.getElementById('pauseSlider');
+        var pauseVal = document.getElementById('pauseVal');
+        var speedSlider = document.getElementById('speedSlider');
+        var speedVal = document.getElementById('speedVal');
+        var resetBtn = document.getElementById('resetBtn');
+
+        function setActionHeader(action) {
+            currentAction = action;
+            if (!action) return;
+            if (action.endsWith('.now-playing')) {
+                titleIcon.textContent = '🎵';
+                titleText.textContent = '現在の曲 スクロール設定';
+                targetTag.textContent = '[現在の曲 専用]';
+            } else if (action.endsWith('.next')) {
+                titleIcon.textContent = '⏭';
+                titleText.textContent = '次の曲 スクロール設定';
+                targetTag.textContent = '[次の曲 専用]';
+            } else if (action.endsWith('.previous')) {
+                titleIcon.textContent = '⏮';
+                titleText.textContent = '前の曲 スクロール設定';
+                targetTag.textContent = '[前の曲 専用]';
+            }
+        }
+
+        function updateUI(pause, speed, disableScroll) {
+            var disabled = !!disableScroll;
+            disableScrollCheckbox.checked = disabled;
+
+            pauseSlider.value = pause;
+            pauseVal.textContent = parseFloat(pause).toFixed(1) + ' 秒';
+            speedSlider.value = speed;
+            speedVal.textContent = parseInt(speed, 10) + ' px/秒';
+
+            // チェックボックスONでスライダー群をグレーアウト & 操作無効化
+            if (disabled) {
+                pauseGroup.classList.add('disabled');
+                speedGroup.classList.add('disabled');
+                pauseSlider.disabled = true;
+                speedSlider.disabled = true;
+            } else {
+                pauseGroup.classList.remove('disabled');
+                speedGroup.classList.remove('disabled');
+                pauseSlider.disabled = false;
+                speedSlider.disabled = false;
+            }
+        }
+
+        function saveSettings() {
+            var disabled = disableScrollCheckbox.checked;
+            var pause = parseFloat(pauseSlider.value);
+            var speed = parseInt(speedSlider.value, 10);
+            updateUI(pause, speed, disabled);
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                var payload = {
+                    disableScroll: disabled,
+                    pauseSeconds: pause,
+                    scrollSpeed: speed
+                };
+
+                // このキー固有の個別設定として保存
+                websocket.send(JSON.stringify({
+                    event: 'setSettings',
+                    context: pluginUUID,
+                    payload: payload
+                }));
+
+                // プラグイン側へ即時通知
+                websocket.send(JSON.stringify({
+                    event: 'sendToPlugin',
+                    action: currentAction,
+                    context: pluginUUID,
+                    payload: payload
+                }));
+            }
+        }
+
+        disableScrollCheckbox.addEventListener('change', saveSettings);
+        pauseSlider.addEventListener('input', saveSettings);
+        speedSlider.addEventListener('input', saveSettings);
+
+        resetBtn.addEventListener('click', function() {
+            updateUI(5, 80, false);
+            saveSettings();
+        });
+
+        function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+            pluginUUID = inPropertyInspectorUUID;
+
+            try {
+                var actionInfo = typeof inActionInfo === 'string' ? JSON.parse(inActionInfo) : inActionInfo;
+                if (actionInfo) {
+                    setActionHeader(actionInfo.action);
+                    var settings = actionInfo.payload && actionInfo.payload.settings;
+                    if (settings) {
+                        var disabled = !!settings.disableScroll;
+                        var pause = settings.pauseSeconds !== undefined ? settings.pauseSeconds : 5;
+                        var speed = settings.scrollSpeed !== undefined ? settings.scrollSpeed : 80;
+                        updateUI(pause, speed, disabled);
+                    }
+                }
+            } catch (e) {}
+
+            websocket = new WebSocket('ws://127.0.0.1:' + inPort);
+
+            websocket.onopen = function() {
+                websocket.send(JSON.stringify({
+                    event: inRegisterEvent,
+                    uuid: inPropertyInspectorUUID
+                }));
+
+                // このインスタンスの個別設定を取得
+                websocket.send(JSON.stringify({
+                    event: 'getSettings',
+                    context: inPropertyInspectorUUID
+                }));
+            };
+
+            websocket.onmessage = function(evt) {
+                try {
+                    var msg = JSON.parse(evt.data);
+                    if (msg.event === 'didReceiveSettings') {
+                        var settings = (msg.payload && msg.payload.settings) || {};
+                        var disabled = !!settings.disableScroll;
+                        var pause = settings.pauseSeconds !== undefined ? settings.pauseSeconds : 5;
+                        var speed = settings.scrollSpeed !== undefined ? settings.scrollSpeed : 80;
+                        updateUI(pause, speed, disabled);
+                    }
+                } catch (e) {}
+            };
+        }
+
+        // YouTube Music 連携ステータスのポーリング更新
+        var statusDot = document.getElementById('statusDot');
+        var statusText = document.getElementById('statusText');
+        var bannerDetail = document.getElementById('bannerDetail');
+
+        function updateStatusBanner() {
+            fetch('http://127.0.0.1:28945/status')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.activeClients > 0) {
+                        statusDot.className = 'status-dot connected';
+                        statusText.textContent = 'YouTube Music 連動中';
+                        if (data.currentTrack && data.currentTrack.title && data.currentTrack.title !== '未再生') {
+                            bannerDetail.textContent = '🎵 ' + data.currentTrack.title + ' / ' + (data.currentTrack.artist || '');
+                        } else {
+                            bannerDetail.textContent = 'ブラウザと接続されています（待機中）';
+                        }
+                    } else {
+                        statusDot.className = 'status-dot waiting';
+                        statusText.textContent = 'YouTube Music 待機中';
+                        bannerDetail.textContent = 'Chrome拡張機能「NosTune」を起動してYouTube Musicを開いてください';
+                    }
+                })
+                .catch(function() {
+                    statusDot.className = 'status-dot waiting';
+                    statusText.textContent = 'YouTube Music 待機中';
+                    bannerDetail.textContent = 'Chrome拡張機能「NosTune」を起動してYouTube Musicを開いてください';
+                });
+        }
+
+        updateStatusBanner();
+        setInterval(updateStatusBanner, 2000);
+    </script>
+</body>
+</html>
