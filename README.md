@@ -1,61 +1,71 @@
-# YouTube Music Auto Skipper
+# NosTune for Stream Deck 🎛️🎵
 
-YouTube Music（Web版 / Android版）で再生中の楽曲を監視し、事前に設定したルール（リリース年や特定のアーティスト）に合致した場合に、**自動的に低評価をつけて次の曲へスキップ**するツール群です。
-また、外部ツール（Stream Deck や MacroDroid など）と連携して「手動で任意の曲を低評価＆除外リストに追加」することも可能です。
-
-## プロジェクト構成
-
-このリポジトリは、以下の2つのコンポーネントで構成されています。
-
-### 1. PC版 (`youtube-music-skipper`)
-- **技術スタック**: Electron, Node.js, Puppeteer
-- **役割**: PCのバックグラウンドで常駐し、Puppeteerを通じてYouTube Music（Chrome等）のDOMを監視・操作します。
-- **機能**:
-  - `config.json` に設定された「指定年以前」や「除外アーティスト」に合致する曲を自動スキップ
-  - `localhost` 向けにAPIサーバーを公開し、Stream Deckなどから「現在の曲を除外」「再生中の曲名取得」といった操作が可能
-
-### 2. Android版 (`ytm-listener`)
-- **技術スタック**: Kotlin, Android NotificationListenerService, MediaSession API
-- **役割**: Android端末上でバックグラウンドサービスとして動作し、YouTube Musicアプリの通知とMediaSessionを監視します。
-- **機能**:
-  - WebスクレイピングとiTunes APIを用いて、端末単体で再生中の曲のリリース年を特定し、ルール合致時にスキップ
-  - Androidの「クイック設定パネル」に専用のタイルを追加し、1タップで「現在再生中のアーティストを除外リストに追加＆低評価＆スキップ」が可能
-  - `BroadcastReceiver` を公開しているため、**MacroDroid** などの自動化アプリを使って、イヤホンのボタン操作やスマホのジェスチャーからスキップを発動できます
+> **YouTube Music の楽曲情報・アートワークを Stream Deck の液晶キーにリアルタイム表示＆手元で直感操作できる専用プラグイン**  
+> ※ Chrome 拡張機能版「NosTune for YouTube Music」とシームレスに連動します。
 
 ---
 
-## ☁️ クラウド同期機能 (GitHub Gist)
+## 🌟 主な機能 (Features)
 
-PC版とAndroid版は、互いに独立して動作しますが、**GitHub Gist** を用いて除外ルール（`config.json` の内容）をシームレスに同期することができます。
-
-### Gist同期のセットアップ方法
-1. GitHubの [Personal Access Tokens (classic)](https://github.com/settings/tokens/new) ページへアクセスします。
-2. 権限（Scope）で **`gist`** のみにチェックを入れて Token を発行し、必ずコピーして控えておきます。
-3. [GitHub Gist](https://gist.github.com/) にアクセスし、空のGistを新しく作成します（ファイル名や内容は適当でOK）。作成後、URLの末尾にある英数字の文字列（Gist ID）を控えます。
-4. **PC版**: アプリのタスクトレイアイコンから「設定画面」を開き、「Gist同期設定」に Token と Gist ID を入力して有効化します。
-5. **Android版**: アプリのメイン画面下部にある設定パネルに、同じ Token と Gist ID を入力して有効化します。
-
-以降は、PCまたはAndroidで除外アーティストを追加した際に、自動的にGist経由でもう一方のデバイスへルールが共有されます。
-
----
-
-## 🚀 インストールと起動方法
-
-### PC版 (`youtube-music-skipper`)
-1. Node.js がインストールされていることを確認します。
-2. ターミナルで `youtube-music-skipper` フォルダを開きます。
-3. `npm install` を実行して依存パッケージをインストールします。
-4. `npm start` または `node server.js` でアプリを起動します。（タスクトレイに常駐します）
-
-### Android版 (`ytm-listener`)
-1. Android Studio を使用してプロジェクトを開き、ビルド（`assembleDebug` 等）を行います。
-2. 生成された APK を Android端末にインストールします。
-3. インストール後、アプリを起動して「通知へのアクセス」権限を許可してください。
+- **🖼️ リアルタイム・アートワーク ＆ 楽曲表示（Now Playing）**
+  - 再生中のジャケット写真・曲名・アーティスト名を液晶キー全体に美しく描画。
+  - 長いタイトルはスムーズにティッカースクロール表示。キーを押すと再生 / 一時停止を即座にトグル。
+- **⏭️ 再生コントロール（Next / Previous）**
+  - YouTube Music のタブを探すことなく、手元のキーからワンタップで次の曲・前の曲へスキップ。
+- **🚫 手元から除外ルールの登録（Skip Artist / Undo）**
+  - 気に入らない曲が流れたら、手元のボタンを押すだけでそのアーティストを「NosTune」の除外リストに即時追加＆スキップ。
+  - 間違えて登録しても「Undo」ボタンで直前の追加を取り消し可能。
+- **🤍 今回だけ聴く / 恒久許可（Allow Once / Allow Permanent）**
+  - スキップされた曲でも「やっぱり今聴きたい」時はワンボタンで巻き戻して再生。
+- **⚙️ 外部サーバー・常駐アプリ不要**
+  - Stream Deck アプリ内部の Node.js エンジンで軽量に動作するため、別途ソフトを起動しておく必要はありません。
 
 ---
 
-## ⚠️ 注意事項
-- **APIキーやTokenの取り扱い**: 
-  PC版の `config.json` には、GistのToken情報が保存されます。このファイルは `.gitignore` で除外されていますが、ご自身でGistへアップロードしたり共有したりする際は、Token情報が漏洩しないようにご注意ください。
-- **YouTubeの仕様変更**: 
-  YouTube MusicのDOM構造やAPIの仕様変更により、スキップや年数取得が機能しなくなる可能性があります。
+## 📋 必要な環境 (Requirements)
+
+1. **Stream Deck ソフトウェア**: v6.6 以降（Stream Deck / MK.2 / Plus / Neo / Mobile 等に対応）
+2. **Google Chrome** または **Microsoft Edge**
+3. **Chrome 拡張機能**: [NosTune for YouTube Music](https://chromewebstore.google.com/) がブラウザにインストールされていること
+
+---
+
+## 🚀 インストール方法 (Installation)
+
+1. [Releases ページ](https://github.com/Oint60/YouTube-Music-Auto-Skipper/releases/latest) にアクセスします。
+2. Assets にある **`com.nostune.streamdeck.streamDeckPlugin`** をダウンロードします。
+3. ダウンロードしたファイルを **ダブルクリック** します。
+4. Stream Deck 公式アプリが自動で立ち上がり、「プラグインが正常にインストールされました」と表示されれば完了です！
+
+---
+
+## 🎮 使い方 (How to Use)
+
+1. Stream Deck 設定画面の右側パネルから **「NosTune (YouTube Music)」** カテゴリを開きます。
+2. お好みのキーにアクション（例: `YTM Now Playing` など）をドラッグ＆ドロップして配置します。
+3. ブラウザで [YouTube Music](https://music.youtube.com) を開き、曲を再生すると自動的にキー液晶と連動します。
+
+### 配置可能なアクション一覧
+
+| アクション名 | 機能説明 |
+| :--- | :--- |
+| **YTM Now Playing** | アートワーク＆曲名・アーティスト名を液晶全面に表示。押すと再生/一時停止。 |
+| **YTM Next Track** | 次の曲へスキップ。 |
+| **YTM Previous Track** | 前の曲へ戻る。 |
+| **YTM Skip Artist** | 現在再生中のアーティストを除外ルールに追加してスキップ。 |
+| **YTM Undo** | 直前に追加した除外ルールを取り消し。 |
+| **YTM Allow Once** | スキップされた曲を「今回だけ聴く」として巻き戻し再生。 |
+| **YTM Allow Permanent** | 現在の曲を「恒久ホワイトリスト」に追加。 |
+| **YTM Toggle** | NosTune の自動スキップ監視の有効 / 無効を手元で切り替え。 |
+
+---
+
+## ☕ 開発者を応援する (Support)
+
+NosTune が気に入っていただけましたら、[Buy Me a Coffee](https://buymeacoffee.com/leben) にてサポートいただけると今後の励みになります！
+
+---
+
+## 📄 ライセンス (License)
+
+MIT License
