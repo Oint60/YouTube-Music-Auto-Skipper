@@ -26,7 +26,7 @@
 
 1. **Stream Deck ソフトウェア**: v6.6 以降（Stream Deck / MK.2 / Plus / Neo / Mobile 等に対応）
 2. **Google Chrome** または **Microsoft Edge**
-3. **Chrome 拡張機能**: [NosTune for YouTube Music](https://chromewebstore.google.com/) がブラウザにインストールされていること
+3. **Chrome 拡張機能**: [NosTune for YouTube Music (Chrome ウェブストア)](https://chromewebstore.google.com/detail/nostune-for-youtube-music/idogcmccnhicaebhedblogdmhohnklef?hl=JA) がブラウザにインストールされていること
 
 ---
 
